@@ -116,6 +116,6 @@ private:
     bool saveWorkspaceAs();
 
     void setWorkspaceModified(bool modified);
-    int askSaveBecauseWorkspaceModified();
+    int  askSaveBecauseWorkspaceModified();
 
 };

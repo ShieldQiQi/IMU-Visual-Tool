@@ -34,7 +34,8 @@ LIBS += -L/opt/ros/melodic/lib \
 -lroscpp -lrospack -lpthread -lrosconsole \
     -lrosconsole_log4cxx -lrosconsole_backend_interface \
     -lxmlrpcpp -lroscpp_serialization -lrostime \
-    -lcpp_common  -lroslib -lpthread
+    -lcpp_common  -lroslib -lpthread -lboost_system \
+    -ltf -ltf2 -ltf2_ros -ltf_conversions -lactionlib
 
 
 FORMS    += mainwindow.ui

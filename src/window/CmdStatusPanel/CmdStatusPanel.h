@@ -44,8 +44,8 @@ public:
     explicit CmdStatusPanelWindow(QWidget *parent, Backend &backend);
     ~CmdStatusPanelWindow();
 
-    Dial *dial;
-    QTimer   *timer;
+    Dial    *dial;
+    QTimer  *timer;
 
     Ui::CmdStatusPanelWindow *ui;
 

@@ -37,6 +37,13 @@
 #include <driver/CanInterface.h>
 #include <core/CanTrace.h>
 
+// ROS headfiles
+#include <ros/ros.h>
+#include <nav_msgs/Odometry.h>
+#include <geometry_msgs/Twist.h>
+#include <std_msgs/String.h>
+#include <tf/transform_broadcaster.h>
+
 namespace Ui {
 class GraphWindow;
 }
@@ -53,16 +60,16 @@ public:
     int paint_Flag = 0;
     int timer_count = 0;
     QCustomPlot *customPlot;
-    QCPCurve *tar_Vel;
-    QCPCurve *actual_Vel;
-    QCPCurve *tar_Pos;
-    QCPCurve *actual_Pos;
-    QCPCurve *tar_Iq;
-    QCPCurve *actual_Iq;
-    QCPCurve *tar_Id;
-    QCPCurve *actual_Id;
+    QCPCurve *Roll;
+    QCPCurve *Pitch;
+    QCPCurve *Yaw;
+    QCPCurve *Gryo_x;
+    QCPCurve *Gryo_y;
+    QCPCurve *Gryo_z;
+
     QTimer   *dataTimer;
     QTimer   *easterEggTimer;
+    QTimer   *tfPublishTimer;
     short    frameCount = 0;
 
     QTextStream *textStream;
@@ -74,18 +81,19 @@ public:
 
     // manual mode parameters
     float xAxisRange = 5;
-    float targetPos = 0.0;
-    float targetVel = 0.0;
 
-    // parameters from devices
-    QQueue<float> targetPosQueue;
-    QQueue<float> actualPosQueue;
-    QQueue<float> targetVelQueue;
-    QQueue<float> actualVelQueue;
-    QQueue<float> targetIdQueue;
-    QQueue<float> actualIdQueue;
-    QQueue<float> targetIqQueue;
-    QQueue<float> actualIqQueue;
+    // the attitude store buffer
+    std_msgs::String msg;
+    ros::Publisher attitude_pub;
+
+    QQueue<float> yawQueue;
+    QQueue<float> pitchQueue;
+    QQueue<float> rollQueue;
+    QQueue<QQuaternion> quaternionQueue;
+
+    float currentRoll = 0;
+    float currentPitch = 0;
+    float currentYaw = 0;
 
     void sendCmdCANMsg(void);
 
@@ -94,32 +102,24 @@ public:
 
 private slots:
 
-//    void on_Vel_clicked();
-//    void on_Pos_clicked();
-//    void on_Iq_clicked();
-//    void on_Id_clicked();
     void realtimeDataSlot();
     void easterEggDataSlot();
+    void tfPublisheslot();
 
 public slots:
 
     void startEasterEggSlot();
 
-    void tarPosDataSlot(int state);
-    void actuPosDataSlot(int state);
-    void actuVelDataSlot(int state);
-    void tarVelDataSlot(int state);
-    void tarIqDataSlot(int state);
-    void actuIqDataSlot(int state);
-    void tarIdDataSlot(int state);
-    void actuIdDataSlot(int state);
-    void posModeChanged(int state);
+    void rollDataSlot(int state);
+    void pitchDataSlot(int state);
+    void yawDataSlot(int state);
+    void gryoXDataSlot(int state);
+    void gryoYDataSlot(int state);
+    void gryoZDataSlot(int state);
+
     void dynamicModeChanged(int state);
-    void manualModeChanged(int state);
 
     void sliderXValueChanged(int value);
-    void sliderPosValueChanged(int value);
-    void sliderVelValueChanged(int value);
 
     void DecodeCANMsg(QString string);
 

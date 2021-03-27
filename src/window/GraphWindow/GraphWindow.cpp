@@ -21,7 +21,6 @@
 
 #include "GraphWindow.h"
 #include "ui_GraphWindow.h"
-
 #include <core/Backend.h>
 
 double velocity = 0;
@@ -35,30 +34,24 @@ GraphWindow::GraphWindow(QWidget *parent, Backend &backend) :
 
     customPlot = new QCustomPlot(this);
 
-    tar_Pos = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    tar_Pos->setName("tar_Pos");
-    tar_Pos->setPen(QPen(Qt::red,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    actual_Pos = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    actual_Pos->setName("actual_Pos");
-    actual_Pos->setPen(QPen(Qt::blue,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    tar_Vel = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    tar_Vel->setName("tar_Vel");
-    tar_Vel->setPen(QPen(Qt::darkGreen,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    actual_Vel = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    actual_Vel->setName("actual_Vel");
-    actual_Vel->setPen(QPen(Qt::yellow,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    tar_Iq = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    tar_Iq->setName("tar_Iq");
-    tar_Iq->setPen(QPen(Qt::cyan,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    actual_Iq = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    actual_Iq->setName("actual_Iq");
-    actual_Iq->setPen(QPen(Qt::darkYellow,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    tar_Id = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    tar_Id->setName("tar_Id");
-    tar_Id->setPen(QPen(Qt::magenta,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    actual_Id = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
-    actual_Id->setName("actual_Id");
-    actual_Id->setPen(QPen(Qt::darkCyan,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Roll = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
+    Roll->setName("Roll");
+    Roll->setPen(QPen(Qt::red,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Pitch = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
+    Pitch->setName("Pitch");
+    Pitch->setPen(QPen(Qt::blue,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Yaw = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
+    Yaw->setName("Yaw");
+    Yaw->setPen(QPen(Qt::darkGreen,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Gryo_x = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
+    Gryo_x->setName("Gryo x");
+    Gryo_x->setPen(QPen(Qt::yellow,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Gryo_y = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
+    Gryo_y->setName("Gryo y");
+    Gryo_y->setPen(QPen(Qt::cyan,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Gryo_z = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
+    Gryo_z->setName("Gryo z");
+    Gryo_z->setPen(QPen(Qt::darkYellow,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
 
     customPlot->setGeometry(5,5,1150,700);
     customPlot->legend->setVisible(true);
@@ -75,18 +68,18 @@ GraphWindow::GraphWindow(QWidget *parent, Backend &backend) :
     timeTicker->setTimeFormat("%h:%m:%s");
     customPlot->xAxis->setTicker(timeTicker);
     customPlot->axisRect()->setupFullAxesBox();
-    customPlot->yAxis->setRange(-5, 5);
+    customPlot->yAxis->setRange(-180, 180);
 
     // add a Easter egg (●'◡'●)
     customPlot->addGraph();
     customPlot->graph(2)->setPen(QColor(50, 50, 50, 255));
     customPlot->graph(2)->setLineStyle(QCPGraph::lsNone);
     customPlot->graph(2)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDiamond, 4));
-    customPlot->graph(2)->setName("極楽浄土");
+    customPlot->graph(2)->setName(" ");
     file = new QFile("/home/qi/Qt_Projects/IMU-Visual-Tool-CANOPEN/src/assets/pointXY.csv");
     textStream = new QTextStream;
     if(!file->open(QFile::ReadOnly | QFile::Text)){
-        QMessageBox::information(this,"","Can nossst load the csv file",NULL);
+        QMessageBox::information(this,"","Can nossst load the csv file");
         isFileOpened = 0;
     }else{
         isFileOpened = 1;
@@ -101,12 +94,22 @@ GraphWindow::GraphWindow(QWidget *parent, Backend &backend) :
     connect(dataTimer, SIGNAL(timeout()), this, SLOT(realtimeDataSlot()));
     dataTimer->start(0); // Interval 0 means to refresh as fast as possible
 
+    tfPublishTimer = new QTimer(this);
+    connect(tfPublishTimer, SIGNAL(timeout()), this, SLOT(tfPublisheslot()));
+    dataTimer->start(0.02); // 50HZ
+
     easterEggTimer = new QTimer(this);
     connect(easterEggTimer, SIGNAL(timeout()), this, SLOT(easterEggDataSlot()));
 
     customPlot->replot();
     connect(customPlot,&QCustomPlot::mouseMove,this,&GraphWindow::myMoveEvent);
 
+    // init a ros node for publishing the Rotation matrix
+    int argc = 0;
+    char **argv = 0;
+    ros::init(argc, argv, "attitudePublisher");
+    ros::NodeHandle rosHandle;
+    attitude_pub = rosHandle.advertise<std_msgs::String>("/test", 10);
 }
 
 void GraphWindow::realtimeDataSlot()
@@ -114,115 +117,115 @@ void GraphWindow::realtimeDataSlot()
     if(!isPlayEasterEgg)
     {
         // rescale value (vertical) axis to fit the current data:
-        tar_Pos->rescaleValueAxis(true);
+        Roll->rescaleValueAxis(true);
         // make key axis range scroll with the data (at a constant range size of 8):
 
         customPlot->replot();
     }
 }
 
+void GraphWindow::tfPublisheslot()
+{
+    // pub attitude Msg to ROS
+//    tf::TransformBroadcaster tfBroadCaster;
+//    tfBroadCaster.sendTransform(tf::StampedTransform(
+//        tf::Transform(tf::createQuaternionFromRPY(currentRoll/180.0*M_PI,currentPitch/180.0*M_PI,currentYaw/180.0*M_PI),
+//        tf::Vector3(0.0, 0.0, 0.0)),
+//        ros::Time::now(), "world", "PCB")
+//        );
+}
+
 void GraphWindow::DecodeCANMsg(QString string)
 {
-    // decode actual pos,velocity,Id,Iq from CAN Msg
+    // decode Euler-Angle
     QStringList sections = string.split(QRegExp("[ ,*/^]"));
-    targetPosQueue.append((sections[0]+sections[1]).toInt(nullptr,16));
-    actualPosQueue.append((sections[2]+sections[3]).toInt(nullptr,16));
-    targetVelQueue.append(sections[4].toInt(nullptr,16)/10.0);
-    actualVelQueue.append(sections[5].toInt(nullptr,16)/10.0);
-    targetIqQueue.append(sections[6].toInt(nullptr,16)/10.0);
-    actualIqQueue.append(sections[7].toInt(nullptr,16)/10.0);
+    currentRoll = (sections[1]+sections[0]).toInt(nullptr,16);
+    currentPitch = (sections[3]+sections[2]).toInt(nullptr,16);
+    currentYaw = (sections[5]+sections[4]).toInt(nullptr,16);
+    if(currentRoll<=0X7FFF){
+        currentRoll /= 32767.0*180;
+    }else{
+        currentRoll = (currentRoll-65535)/32767.0*180;
+    }
+    if(currentPitch<=0X7FFF){
+        currentPitch /= 32767.0*180;
+    }else{
+        currentPitch = (currentPitch-65535)/32767.0*180;
+    }
+    if(currentYaw<=0X7FFF){
+        currentYaw /= 32767.0*180;
+    }else{
+        currentYaw = (currentYaw-65535)/32767.0*180;
+    }
 
-    velocity = sections[5].toInt(nullptr,16)/10.0;
+    rollQueue.append(currentRoll);
+    pitchQueue.append(currentPitch);
+    yawQueue.append(currentYaw);
+
+    tf::TransformBroadcaster tfBroadCaster;
+    tfBroadCaster.sendTransform(tf::StampedTransform(
+        tf::Transform(tf::createQuaternionFromRPY(currentRoll/180.0*M_PI,currentPitch/180.0*M_PI,currentYaw/180.0*M_PI),
+        tf::Vector3(0.0, 0.0, 0.0)),
+        ros::Time::now(), "world", "PCB")
+        );
 
     // add data to lines:
     static double key = 0;
-    if(!targetPosQueue.isEmpty())
+    if(!rollQueue.isEmpty())
     {
-//        qDebug()<<targetPosQueue.size()<<endl;
-        key += 0.04;
+        key += 0.01;
 
         if((checkBoxStateBus & 3) == 2)
-            tar_Pos->addData(key,targetPosQueue.front());
+            Roll->addData(key,rollQueue.front());
         if((checkBoxStateBus & 12) >> 2 == 2)
-            actual_Pos->addData(key,actualPosQueue.front());
+            Pitch->addData(key,pitchQueue.front());
         if((checkBoxStateBus & 48) >> 4 == 2)
-            tar_Vel->addData(key,targetVelQueue.front()/10.0);
-        if((checkBoxStateBus & 192) >> 6 == 2)
-            actual_Vel->addData(key,actualVelQueue.front()/10.0);
-        if((checkBoxStateBus & 768) >> 8 == 2)
-            tar_Iq->addData(key,targetIqQueue.front()/10.0);
-        if((checkBoxStateBus & 3072) >> 10 == 2)
-            actual_Iq->addData(key,actualIqQueue.front()/10.0);
-//                if((checkBoxStateBus & 12288) >> 12 == 2)
-//                    tar_Id->addData(key,targetIdQueue.front());
-//                if((checkBoxStateBus & 49152) >> 14 == 2)
-//                    actual_Id->addData(key,actualIdQueue.front());
-        targetPosQueue.pop_front();
-        actualPosQueue.pop_front();
-        targetVelQueue.pop_front();
-        actualVelQueue.pop_front();
-        targetIqQueue.pop_front();
-        actualIqQueue.pop_front();
+            Yaw->addData(key,yawQueue.front());
+
+        rollQueue.pop_front();
+        pitchQueue.pop_front();
+        yawQueue.pop_front();
 
         if(((checkBoxStateBus & 786432) >> 18 == 2))
             customPlot->xAxis->setRange(key, xAxisRange, Qt::AlignRight);
-
     }
 }
 
 // save memory, from me on!
-void GraphWindow::tarPosDataSlot(int state)
+void GraphWindow::rollDataSlot(int state)
 {
     checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-3);
-    checkBoxStateBus |= (uint32_t)state;
+    checkBoxStateBus |= (uint32_t)state; //state = 2 is checked
 }
 
-void GraphWindow::actuPosDataSlot(int state)
+void GraphWindow::pitchDataSlot(int state)
 {
     checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-12);
     checkBoxStateBus |= ((uint32_t)state << 2);
 }
 
-void GraphWindow::tarVelDataSlot(int state)
+void GraphWindow::yawDataSlot(int state)
 {
     checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-48);
     checkBoxStateBus |= ((uint32_t)state << 4);
 }
 
-void GraphWindow::actuVelDataSlot(int state)
+void GraphWindow::gryoXDataSlot(int state)
 {
     checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-192);
     checkBoxStateBus |= ((uint32_t)state << 6);
 }
 
-void GraphWindow::tarIqDataSlot(int state)
+void GraphWindow::gryoYDataSlot(int state)
 {
     checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-768);
     checkBoxStateBus |= ((uint32_t)state << 8);
 }
 
-void GraphWindow::actuIqDataSlot(int state)
+void GraphWindow::gryoZDataSlot(int state)
 {
     checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-3072);
     checkBoxStateBus |= ((uint32_t)state << 10);
-}
-
-void GraphWindow::tarIdDataSlot(int state)
-{
-    checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-12288);
-    checkBoxStateBus |= ((uint32_t)state << 12);
-}
-
-void GraphWindow::actuIdDataSlot(int state)
-{
-    checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-49152);
-    checkBoxStateBus |= ((uint32_t)state << 14);
-}
-
-void GraphWindow::posModeChanged(int state)
-{
-    checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-196608);
-    checkBoxStateBus |= ((uint32_t)state << 16);
 }
 
 void GraphWindow::dynamicModeChanged(int state)
@@ -231,29 +234,9 @@ void GraphWindow::dynamicModeChanged(int state)
     checkBoxStateBus |= ((uint32_t)state << 18);
 }
 
-void GraphWindow::manualModeChanged(int state)
-{
-    checkBoxStateBus &= (uint32_t)(0xFFFFFFFF-3145728);
-    checkBoxStateBus |= ((uint32_t)state << 20);
-}
-
 void GraphWindow::sliderXValueChanged(int value)
 {
     xAxisRange = value+1;
-}
-
-void GraphWindow::sliderPosValueChanged(int value)
-{
-    targetPos = value/99.0*360;
-    if(((checkBoxStateBus & 3145728) >> 20 == 2) && ((checkBoxStateBus & 196608) >> 16 == 2))
-        sendCmdCANMsg();
-}
-
-void GraphWindow::sliderVelValueChanged(int value)
-{
-    targetVel = value/99.0*20;
-    if(((checkBoxStateBus & 3145728) >> 20 == 2) && ((checkBoxStateBus & 196608) >> 16 == 0))
-        sendCmdCANMsg();
 }
 
 void GraphWindow::myMoveEvent(QMouseEvent *event)
@@ -328,9 +311,9 @@ void GraphWindow::startEasterEggSlot()
         customPlot->xAxis->setRange(16, 16, Qt::AlignRight);
         customPlot->replot();
         if((PosionedCounter++)%2 == 0)
-            QMessageBox::information(this,"","恭喜你发现了宝藏！",NULL);
+            QMessageBox::information(this,"","恭喜你发现了宝藏！");
         else
-            QMessageBox::information(this,"","中毒了吧！再看一遍？",NULL);
+            QMessageBox::information(this,"","中毒了吧！再看一遍？");
     }
 }
 
@@ -343,8 +326,8 @@ void GraphWindow::sendCmdCANMsg(void)
     static uint8_t dlc = 8;
     if((checkBoxStateBus & 196608) >> 16 == 2){
 //        Pos Cmd Mode
-        data_int[0] = (uint8_t)(((uint16_t)(targetPos*10))>>8);
-        data_int[1] = (uint8_t)((uint16_t)(targetPos*10));
+        data_int[0] = 0;
+        data_int[1] = 0;
         data_int[2] = 0;
         data_int[3] = 0;
         data_int[4] = 0;
@@ -379,7 +362,7 @@ void GraphWindow::sendCmdCANMsg(void)
     msg.setRTR(false);
     msg.setErrorFrame(false);
 
-    CanTrace *trace = _backend.getTrace();
+    //CanTrace *trace = _backend.getTrace();
     foreach (CanInterfaceId ifid, _backend.getInterfaceList()) {
         CanInterface *intf = _backend.getInterfaceById(ifid);
         int tx_ret = intf->sendMessage(msg);
@@ -404,15 +387,15 @@ GraphWindow::~GraphWindow()
 {
     delete ui;
     delete customPlot;
-    delete tar_Vel;
-    delete actual_Vel;
-    delete tar_Pos;
-    delete actual_Pos;
-    delete tar_Iq;
-    delete actual_Iq;
-    delete tar_Id;
-    delete actual_Id;
+    delete Roll;
+    delete Pitch;
+    delete Yaw;
+    delete Gryo_x;
+    delete Gryo_y;
+    delete Gryo_z;
+
     delete dataTimer;
+    delete tfPublishTimer;
 
     delete easterEggTimer;
     delete file;

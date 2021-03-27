@@ -90,41 +90,28 @@ MainWindow::MainWindow(QWidget *parent) :
             this->graphWindow,SLOT(startEasterEggSlot()));
     // the checkbox
     connect(this->cmdStatusPanelWindow->ui->checkBox_1,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(tarPosDataSlot(int)));
+            this->graphWindow,SLOT(rollDataSlot(int)));
     connect(this->cmdStatusPanelWindow->ui->checkBox_2,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(actuPosDataSlot(int)));
+            this->graphWindow,SLOT(pitchDataSlot(int)));
     connect(this->cmdStatusPanelWindow->ui->checkBox_3,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(actuVelDataSlot(int)));
-    connect(this->cmdStatusPanelWindow->ui->checkBox_4,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(tarVelDataSlot(int)));
-    connect(this->cmdStatusPanelWindow->ui->checkBox_5,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(tarIqDataSlot(int)));
-    connect(this->cmdStatusPanelWindow->ui->checkBox_6,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(actuIqDataSlot(int)));
-    connect(this->cmdStatusPanelWindow->ui->checkBox_7,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(tarIdDataSlot(int)));
+            this->graphWindow,SLOT(yawDataSlot(int)));
     connect(this->cmdStatusPanelWindow->ui->checkBox_8,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(actuIdDataSlot(int)));
+            this->graphWindow,SLOT(gryoXDataSlot(int)));
     connect(this->cmdStatusPanelWindow->ui->checkBox_9,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(posModeChanged(int)));
+            this->graphWindow,SLOT(gryoYDataSlot(int)));
     connect(this->cmdStatusPanelWindow->ui->checkBox_10,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(dynamicModeChanged(int)));
+            this->graphWindow,SLOT(gryoZDataSlot(int)));
     connect(this->cmdStatusPanelWindow->ui->checkBox_11,SIGNAL(stateChanged(int)),
-            this->graphWindow,SLOT(manualModeChanged(int)));
+            this->graphWindow,SLOT(dynamicModeChanged(int)));
     // the slider
     connect(this->cmdStatusPanelWindow->ui->horizontalSlider_X,SIGNAL(valueChanged(int)),
             this->graphWindow,SLOT(sliderXValueChanged(int)));
-    connect(this->cmdStatusPanelWindow->ui->horizontalSlider_position,SIGNAL(valueChanged(int)),
-            this->graphWindow,SLOT(sliderPosValueChanged(int)));
-    connect(this->cmdStatusPanelWindow->ui->horizontalSlider_velocity,SIGNAL(valueChanged(int)),
-            this->graphWindow,SLOT(sliderVelValueChanged(int)));
 
     connect(this->traceWindow,SIGNAL(sendCANMsg(QString)),this->graphWindow,SLOT(DecodeCANMsg(QString)));
 
     this->cmdStatusPanelWindow->ui->checkBox_1->setCheckState(Qt::Checked);
     this->cmdStatusPanelWindow->ui->checkBox_2->setCheckState(Qt::Checked);
-    this->cmdStatusPanelWindow->ui->checkBox_9->setCheckState(Qt::Checked);
-    this->cmdStatusPanelWindow->ui->checkBox_10->setCheckState(Qt::Checked);
+    this->cmdStatusPanelWindow->ui->checkBox_3->setCheckState(Qt::Checked);
     this->cmdStatusPanelWindow->ui->checkBox_11->setCheckState(Qt::Checked);
 
 }
@@ -523,7 +510,8 @@ void MainWindow::saveTraceToFile()
 
     QFileDialog fileDialog(0, "Save Trace to file", QDir::currentPath(), filters);
     fileDialog.setAcceptMode(QFileDialog::AcceptSave);
-    fileDialog.setConfirmOverwrite(true);
+//    fileDialog.setConfirmOverwrite(true);
+    fileDialog.setOption(QFileDialog::DontConfirmOverwrite,false);
     fileDialog.selectNameFilter(defaultFilter);
     fileDialog.setDefaultSuffix("asc");
     if (fileDialog.exec()) {

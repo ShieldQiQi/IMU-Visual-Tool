@@ -31,15 +31,14 @@ CmdStatusPanelWindow::CmdStatusPanelWindow(QWidget *parent, Backend &backend) :
 {
     ui->setupUi(this);
 
-
     timer = new QTimer(this);
-    connect(timer, SIGNAL(timeout()), ui->dial, SLOT(valueChanged()));
+    //connect(timer, SIGNAL(timeout()), ui->dial, SLOT(valueChanged()));
     timer->start(100);
 }
 
 CmdStatusPanelWindow::~CmdStatusPanelWindow()
 {
     delete ui;
-    delete dial;
+//    delete dial;
     delete timer;
 }

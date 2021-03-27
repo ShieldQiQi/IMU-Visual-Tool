@@ -21,10 +21,6 @@
 
 #include "mainwindow.h"
 #include <QApplication>
-#include <ros/ros.h>
-#include <nav_msgs/Odometry.h>
-#include <geometry_msgs/Twist.h>
-#include <std_msgs/String.h>
 
 int main(int argc, char *argv[])
 {
@@ -32,19 +28,6 @@ int main(int argc, char *argv[])
     MainWindow w;
 
     w.show();
-
-    ros::init(argc, argv, "command_publisher");
-    ros::NodeHandle rosHandle;
-    ros::Publisher command_pub = rosHandle.advertise<std_msgs::String>("/test", 10);
-
-//    ros::Rate loop_rate(2);
-//    std_msgs::String msg;
-//    while(ros::ok()){
-//        msg.data = "This is a test";
-//        command_pub.publish(msg);
-
-//        loop_rate.sleep();
-//    }
 
     return a.exec();
 }
