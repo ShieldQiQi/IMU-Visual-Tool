@@ -158,7 +158,7 @@ void GraphWindow::DecodeCANMsg(QString string)
     yawQueue.append(currentYaw);
 
     tfBroadCaster.sendTransform(tf::StampedTransform(
-        tf::Transform(tf::createQuaternionFromRPY(currentRoll/180.0*M_PI,currentPitch/180.0*M_PI,currentYaw/180.0*M_PI),
+        tf::Transform(tf::createQuaternionFromRPY(-currentRoll/180.0*M_PI,-currentPitch/180.0*M_PI,currentYaw/180.0*M_PI),
         tf::Vector3(0.0, 0.0, 0.0)),
         ros::Time::now(), "world", "PCB")
         );
