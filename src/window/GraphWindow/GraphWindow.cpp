@@ -39,10 +39,10 @@ GraphWindow::GraphWindow(QWidget *parent, Backend &backend) :
     Roll->setPen(QPen(Qt::red,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     Pitch = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
     Pitch->setName("Pitch");
-    Pitch->setPen(QPen(Qt::blue,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Pitch->setPen(QPen(Qt::green,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     Yaw = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
     Yaw->setName("Yaw");
-    Yaw->setPen(QPen(Qt::darkGreen,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    Yaw->setPen(QPen(Qt::blue,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     Gryo_x = new QCPCurve(customPlot->xAxis, customPlot->yAxis);
     Gryo_x->setName("Gryo x");
     Gryo_x->setPen(QPen(Qt::yellow,1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
@@ -104,11 +104,6 @@ GraphWindow::GraphWindow(QWidget *parent, Backend &backend) :
     customPlot->replot();
     connect(customPlot,&QCustomPlot::mouseMove,this,&GraphWindow::myMoveEvent);
 
-    // init a ros node for publishing the Rotation matrix
-    int argc = 0;
-    char **argv = 0;
-    ros::init(argc, argv, "attitudePublisher");
-    ros::NodeHandle rosHandle;
     attitude_pub = rosHandle.advertise<std_msgs::String>("/test", 10);
 }
 
@@ -143,17 +138,17 @@ void GraphWindow::DecodeCANMsg(QString string)
     currentPitch = (sections[3]+sections[2]).toInt(nullptr,16);
     currentYaw = (sections[5]+sections[4]).toInt(nullptr,16);
     if(currentRoll<=0X7FFF){
-        currentRoll /= 32767.0*180;
+        currentRoll = currentRoll/32767.0*180;
     }else{
         currentRoll = (currentRoll-65535)/32767.0*180;
     }
     if(currentPitch<=0X7FFF){
-        currentPitch /= 32767.0*180;
+        currentPitch = currentPitch/32767.0*180;
     }else{
         currentPitch = (currentPitch-65535)/32767.0*180;
     }
     if(currentYaw<=0X7FFF){
-        currentYaw /= 32767.0*180;
+        currentYaw = currentYaw/32767.0*180;
     }else{
         currentYaw = (currentYaw-65535)/32767.0*180;
     }
@@ -162,7 +157,6 @@ void GraphWindow::DecodeCANMsg(QString string)
     pitchQueue.append(currentPitch);
     yawQueue.append(currentYaw);
 
-    tf::TransformBroadcaster tfBroadCaster;
     tfBroadCaster.sendTransform(tf::StampedTransform(
         tf::Transform(tf::createQuaternionFromRPY(currentRoll/180.0*M_PI,currentPitch/180.0*M_PI,currentYaw/180.0*M_PI),
         tf::Vector3(0.0, 0.0, 0.0)),
@@ -173,7 +167,7 @@ void GraphWindow::DecodeCANMsg(QString string)
     static double key = 0;
     if(!rollQueue.isEmpty())
     {
-        key += 0.01;
+        key += 0.05;
 
         if((checkBoxStateBus & 3) == 2)
             Roll->addData(key,rollQueue.front());

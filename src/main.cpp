@@ -25,6 +25,10 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    // init a ros node for publishing the Rotation matrix
+    ros::init(argc, argv, "attitudePublisher");
+
     MainWindow w;
 
     w.show();

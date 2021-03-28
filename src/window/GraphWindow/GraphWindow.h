@@ -84,6 +84,8 @@ public:
 
     // the attitude store buffer
     std_msgs::String msg;
+    ros::NodeHandle rosHandle;
+    tf::TransformBroadcaster tfBroadCaster;
     ros::Publisher attitude_pub;
 
     QQueue<float> yawQueue;
